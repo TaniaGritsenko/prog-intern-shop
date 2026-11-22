@@ -351,6 +351,33 @@ address{font-style:normal;color:var(--ink-2);font-size:.92rem;margin-bottom:1rem
   background: rgb(241, 233, 216);
   font-size: 18px;
 }
+.mini-cart__actions{
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 13px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-2);
+}
+.mini-cart__actions a{
+  display: block;
+  padding: 10px;
+  border: 2px solid var(--line-2);
+  border-radius: 5px;
+  text-align: center;
+  text-decoration: none;
+  color: white;
+  background-color: var(--ink);
+}
+.mini-cart__actions a:hover,
+.mini-cart__actions a:active{
+  background-color: rgba(200, 80, 6, 0.923);
+  color: white;
+  border-color: rgba(200, 80, 6, 0.923);
+}
+.badge[hidden]{
+  display: none;
+}
 /* ---------- responsive ---------- */
 @media (max-width:1100px){
   .product-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.category-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.method-grid{grid-template-columns:repeat(3,minmax(0,1fr))}

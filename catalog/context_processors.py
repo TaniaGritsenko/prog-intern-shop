@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 from django.conf import settings
-from django.db.models import Count, Q, Sum
 
 from .models import Category, live_category_counts
 
