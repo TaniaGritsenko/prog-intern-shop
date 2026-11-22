@@ -2,11 +2,12 @@ import os
 from pathlib import Path
 
 from django.conf import settings
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, Prefetch, Q, prefetch_related_objects
 
 from .models import Category, live_category_counts
 
 from sales import services
+from sales.models import CartItem
 
 
 def _asset_version():
@@ -46,7 +47,9 @@ def storefront(request):
     user = getattr(request, "user", None)
     if (user is not None and user.is_authenticated) or (hasattr(request, "session") and request.session.get("cart_id")): cart = services.get_cart_for_request(request, create=False)
     if cart:
+        prefetch_related_objects([cart], Prefetch("items", queryset=CartItem.objects.select_related("variant__product")))
         cart_count = cart.item_count
+
     return {"nav_categories": categories, "cart_count": cart_count, "cart": cart,
             "STORE_NAME": settings.STORE_NAME, "STORE_SHORT_NAME": settings.STORE_SHORT_NAME,
             "STORE_TAGLINE": settings.STORE_TAGLINE, "CURRENCY": settings.STORE_CURRENCY, "SITE_URL": settings.SITE_URL, "ASSET_VERSION": ASSET_VERSION}

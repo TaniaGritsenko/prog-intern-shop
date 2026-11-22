@@ -74,7 +74,7 @@
           <button type="button" class="mini-cart__close" aria-label="Close cart">x</button>
         </div>
         <p data-mini-cart-loading hidden>Updating</p>
-        <p data-mini-cart-error role="alert" hidden></p>
+        <p data-mini-cart-error role="alert" aria-live="assertive" hidden></p>
          <form hidden>
             {% csrf_token %}
           </form>
