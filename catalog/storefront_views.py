@@ -85,12 +85,60 @@ def product_list(request, category_slug=None):
     products = _visible_products()
     if category:
         products = products.filter(Q(category=category) | Q(category__parent=category))
-    query = params.get("q", "").strip()
+    query = " ".join(params.get("q", "").split())
+
     if query:
-        products = products.filter(Q(name__icontains=query) | Q(short_description__icontains=query)
-                                   | Q(description__icontains=query) | Q(tasting_notes__icontains=query)
-                                   | Q(origin__icontains=query) | Q(region__icontains=query)
-                                   | Q(sku__icontains=query) | Q(brand__name__icontains=query))
+        normalized = query.casefold().replace("-", " ").replace("_", " ")
+        normalized = " ".join(normalized.split())
+
+        if normalized.endswith(("sses", "xes", "ches", "shes", "zes")):
+            singular = normalized[:-2]
+        elif normalized.endswith("ies"):
+            singular = normalized[:-3] + "y"
+        elif normalized.endswith("s") and not normalized.endswith("ss"):
+            singular = normalized[:-1]
+        else:
+            singular = normalized
+
+        search_q = Q()
+
+        for term in {query, singular}:
+            search_q |= (
+                Q(name__icontains=term)
+                | Q(short_description__icontains=term)
+                | Q(description__icontains=term)
+                | Q(tasting_notes__icontains=term)
+                | Q(origin__icontains=term)
+                | Q(region__icontains=term)
+                | Q(sku__icontains=term)
+                | Q(brand__name__icontains=term)
+                | Q(category__name__icontains=term)
+                | Q(category__parent__name__icontains=term)
+                | Q(brew_methods__icontains=term)
+            )
+
+        for code, label in Product.Roast.choices:
+            roast = label.casefold().replace("-", " ")
+            if singular in {roast, f"{roast} roast"}:
+                search_q |= Q(roast_level=code)
+
+        for code, details in BREW_METHODS.items():
+            label = details[0].casefold().replace("-", " ")
+            aliases = {
+                code.replace("_", " "),
+                label,
+                *(part.strip() for part in label.split("/")),
+            }
+            if singular in aliases:
+                search_q |= Q(brew_methods__icontains=code)
+
+        for code, label in Product.Kind.choices:
+            kind = label.casefold()
+            if singular == kind:
+                search_q |= Q(kind=code)
+
+        products = products.filter(search_q)
+
     brand_slug = params.get("brand", "")
     if brand_slug:
         products = products.filter(brand__slug=brand_slug)

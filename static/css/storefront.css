@@ -289,6 +289,20 @@ address{font-style:normal;color:var(--ink-2);font-size:.92rem;margin-bottom:1rem
 .nav-children a:hover{background:var(--sand);color:var(--ink);text-decoration:none}
 .nav-count{display:inline-flex;align-items:center;justify-content:center;min-width:1.5rem;height:1.35rem;padding:0 .35rem;border-radius:999px;background:var(--sand);color:var(--muted);font-size:.72rem;font-weight:600;line-height:1}
 
+
+/* Empty search state improvements */
+.empty-state > .button{margin:1.25rem 0 2rem}
+
+.empty-state > h4{font-size:1.2rem;line-height:1.4;margin:0 0 .75rem}
+
+.empty-state > p{line-height:1.6;margin-bottom:1rem}
+
+.empty-state > .active-chips{display:flex;justify-content:center;flex-wrap:wrap;gap:.75rem;margin:1.25rem auto 0}
+
+.empty-state > .active-chips .chip{padding:.65rem 1rem}
+
+.empty-state > .active-chips + h4{margin-top:2.5rem}
+
 /* ---------- responsive ---------- */
 @media (max-width:1100px){
   .product-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.category-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.method-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
