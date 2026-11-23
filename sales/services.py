@@ -139,12 +139,14 @@ def discount_is_applicable(discount, subtotal, customer=None, now=None):
         redemptions = DiscountRedemption.objects.filter(
             discount=discount,
             customer=customer,
-        )
+        ).exclude(order__status=Order.Status.CANCELLED)
 
         if redemptions.count() >= discount.max_per_customer:
             return False
 
-        if discount.first_order_only and Order.objects.filter(customer=customer).exists():
+        if discount.first_order_only and Order.objects.filter(customer=customer).exclude(
+            status=Order.Status.CANCELLED
+            ).exists():
             return False
 
     return True
@@ -179,14 +181,16 @@ def validate_discount_for_customer(discount, subtotal, customer):
     redemptions = DiscountRedemption.objects.filter(
         discount=discount,
         customer=customer,
-    )
+    ).exclude(order__status=Order.Status.CANCELLED)
 
     if redemptions.count() >= discount.max_per_customer:
         raise ValidationError(
             "You have already used this discount code the maximum number of times."
         )
 
-    if discount.first_order_only and Order.objects.filter(customer=customer).exists():
+    if discount.first_order_only and Order.objects.filter(customer=customer).exclude(
+        status=Order.Status.CANCELLED
+        ).exists():
         raise ValidationError(
             "This discount code is available only on your first order."
         )
