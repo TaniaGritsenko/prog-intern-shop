@@ -238,6 +238,7 @@ def test_cancelled_discounted_order_restores_quota(customer, catalog):
     discount = _active_discount(
         code="CANCEL10",
         usage_limit=1,
+        max_per_customer=1,
     )
 
     cart = _cart(customer, catalog)
@@ -258,6 +259,20 @@ def test_cancelled_discounted_order_restores_quota(customer, catalog):
 
     # Historical redemption remains.
     assert DiscountRedemption.objects.filter(order=order).count() == 1
+
+    # Customer can reuse the discount after cancellation.
+    new_cart = _cart(customer, catalog)
+    apply_discount_code(new_cart, discount.code)
+
+    new_cart.refresh_from_db()
+    assert new_cart.discount == discount
+
+    # Checkout must also accept the discount.
+    new_order = _checkout(new_cart)
+
+    discount.refresh_from_db()
+    assert discount.times_used == 1
+    assert DiscountRedemption.objects.filter(order=new_order).count() == 1
 
 
 def test_cancelled_order_restores_quota_only_once(customer, catalog):
