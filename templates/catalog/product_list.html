@@ -93,12 +93,46 @@
       <div class="product-grid">{% for p in page.object_list %}{% include "catalog/includes/_product_card.html" %}{% endfor %}</div>
       {% include "catalog/includes/_pagination.html" %}
     {% else %}
-      <div class="empty-state">
-        <h3>No coffee matches that</h3>
-        <p>{% if query %}Nothing matched “{{ query }}”. {% endif %}Try fewer filters, another search term, or browse a different category.</p>
-        <a class="button ghost" href="{% url 'product_list' %}">Clear filters</a>
+  <div class="empty-state">
+    <h3>No coffee matches that</h3>
+
+    <p>
+      {% if query %}
+        Nothing matched “{{ query }}”.
+      {% endif %}
+      Try another search or explore our recommendations.
+    </p>
+
+    <a class="button ghost" href="{% url 'product_list' %}">
+      Clear filters
+    </a>
+
+    <h4>Popular searches</h4>
+    <p>Looking for something else? Try these popular searches:</p>
+
+    <div class="active-chips">
+      <a class="chip" href="{% url 'product_list' %}?q=filter+coffee">Filter Coffee</a>
+      <a class="chip" href="{% url 'product_list' %}?q=ethiopia">Ethiopia</a>
+      <a class="chip" href="{% url 'product_list' %}?q=chemex">Chemex</a>
+      <a class="chip" href="{% url 'product_list' %}?q=light+roast">Light Roast</a>
+      <a class="chip" href="{% url 'product_list' %}?q=subscription">Subscription</a>
+    </div>
+
+    {% if categories %}
+      <h4>Browse categories</h4>
+      <p>Explore our available coffee and equipment categories.</p>
+
+      <div class="active-chips">
+        {% for suggested in categories|slice:":5" %}
+          <a class="chip" href="{{ suggested.get_absolute_url }}">
+            {{ suggested.name }}
+          </a>
+        {% endfor %}
       </div>
     {% endif %}
+  </div>
+{% endif %}
+
   </section>
 </div>
 {% endblock %}

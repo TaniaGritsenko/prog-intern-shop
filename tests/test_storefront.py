@@ -150,3 +150,192 @@ def test_subcategories_are_displayed_in_navigation(client, catalog):
     assert "Latin America" in html
     assert africa.get_absolute_url() in html
     assert latin_america.get_absolute_url() in html
+
+
+def test_search_light_roast(client, catalog):
+    product = catalog["products"]["P1"]
+    product.roast_level = "LIGHT"
+    product.save(update_fields=["roast_level"])
+
+    response = client.get(reverse("product_list"), {"q": "light roast"})
+
+    assert response.status_code == 200
+    assert product in response.context["page"].object_list
+
+
+def test_search_ethiopia_category(client, catalog):
+    from catalog.models import Category
+
+    category = Category.objects.create(
+        name="Ethiopia", slug="ethiopia"
+    )
+    product = catalog["products"]["P1"]
+    product.category = category
+    product.save(update_fields=["category"])
+
+    response = client.get(reverse("product_list"), {"q": "ethiopia"})
+
+    assert response.status_code == 200
+    assert product in response.context["page"].object_list
+
+
+def test_search_filter_coffee_parent_category(client, catalog):
+    from catalog.models import Category
+
+    parent = Category.objects.create(
+        name="Filter Coffee", slug="filter-coffee"
+    )
+    child = Category.objects.create(
+        name="Africa", slug="africa", parent=parent
+    )
+
+    product = catalog["products"]["P1"]
+    product.category = child
+    product.save(update_fields=["category"])
+
+    response = client.get(reverse("product_list"), {"q": "filter coffee"})
+
+    assert response.status_code == 200
+    assert product in response.context["page"].object_list
+
+
+def test_search_colombia_category(client, catalog):
+    from catalog.models import Category
+
+    category = Category.objects.create(
+        name="Colombia", slug="colombia"
+    )
+    product = catalog["products"]["P1"]
+    product.category = category
+    product.save(update_fields=["category"])
+
+    response = client.get(reverse("product_list"), {"q": "colombia"})
+
+    assert response.status_code == 200
+    assert product in response.context["page"].object_list
+
+
+def test_search_chemex_brew_method(client, catalog):
+    product = catalog["products"]["P1"]
+    product.brew_methods = "chemex"
+    product.save(update_fields=["brew_methods"])
+
+    response = client.get(reverse("product_list"), {"q": "chemex"})
+
+    assert response.status_code == 200
+    assert product in response.context["page"].object_list
+
+
+def test_search_subscription_product(client, catalog):
+    from catalog.models import Product
+
+    product = catalog["products"]["P1"]
+    product.kind = Product.Kind.SUBSCRIPTION
+    product.save(update_fields=["kind"])
+
+    response = client.get(reverse("product_list"), {"q": "subscription"})
+
+    assert response.status_code == 200
+    assert product in response.context["page"].object_list
+
+
+def test_empty_search_shows_recommendations(client, catalog):
+    response = client.get(
+        reverse("product_list"),
+        {"q": "nonexistent-coffee-xyz"}
+    )
+
+    assert response.status_code == 200
+    assert response.context["total"] == 0
+
+    html = response.content.decode()
+
+    assert "No coffee matches that" in html
+    assert "Popular searches" in html
+    assert "Browse categories" in html
+    assert "Filter Coffee" in html
+    assert "Chemex" in html
+    assert "Clear filters" in html
+
+    assert "?q=filter+coffee" in html
+    assert "?q=chemex" in html
+
+
+
+def test_search_with_stock_filter(client, catalog):
+    product_in_stock = catalog["products"]["P1"]
+    product_out_of_stock = catalog["products"]["P2"]
+
+    product_in_stock.brew_methods = "chemex"
+    product_out_of_stock.brew_methods = "chemex"
+
+    product_in_stock.save(update_fields=["brew_methods"])
+    product_out_of_stock.save(update_fields=["brew_methods"])
+
+    response = client.get(
+        reverse("product_list"),
+        {"q": "chemex", "in_stock": "1"}
+    )
+
+    assert response.status_code == 200
+
+    products = list(response.context["page"].object_list)
+
+    assert product_in_stock in products
+    assert product_out_of_stock not in products
+
+
+
+@pytest.mark.parametrize(
+    "query, brew_code",
+    [
+        ("AEROPRESS", "aeropress"),
+        ("aeropresses", "aeropress"),
+        ("chemexes", "chemex"),
+    ],
+)
+def test_search_brew_method_normalization(client, catalog, query, brew_code):
+    product = catalog["products"]["P1"]
+    product.brew_methods = brew_code
+    product.save(update_fields=["brew_methods"])
+
+    response = client.get(
+        reverse("product_list"),
+        {"q": query}
+    )
+
+    assert response.status_code == 200
+    assert product in response.context["page"].object_list
+
+def test_search_does_not_cause_n_plus_one(client, catalog, settings):
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    for product in catalog["products"].values():
+        if product.status == "ACTIVE" and product.active:
+            product.brew_methods = "chemex"
+            product.save(update_fields=["brew_methods"])
+
+    settings.STOREFRONT_PAGE_SIZE = 1
+
+    with CaptureQueriesContext(connection) as one_product_queries:
+        response_one = client.get(
+            reverse("product_list"), {"q": "chemex"}
+        )
+
+    assert response_one.status_code == 200
+
+    settings.STOREFRONT_PAGE_SIZE = 10
+
+    with CaptureQueriesContext(connection) as three_product_queries:
+        response_three = client.get(
+            reverse("product_list"), {"q": "chemex"}
+        )
+
+    assert response_three.status_code == 200
+    assert response_three.context["total"] == 3
+
+    assert len(three_product_queries) <= len(one_product_queries) + 1, (
+        f"Possible N+1: 1 product used {len(one_product_queries)} "
+        f"queries, 3 products used {len(three_product_queries)} queries"
+    )
