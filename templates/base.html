@@ -95,7 +95,7 @@
         </div>
         <div class="mini-cart__totals">
           <p>Subtotal: <strong data-cart-subtotal>{{ cart.subtotal|default:0|money }}</strong></p>
-          <p>Total: <strong data-cart-total></strong></p>
+          <p>Total: <strong data-cart-total>{{ cart_total|money }}</strong></p>
         </div>
         <div class="mini-cart__actions">
           <a href="{% url 'cart_detail' %}">View cart</a>

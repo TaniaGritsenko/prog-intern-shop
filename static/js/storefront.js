@@ -79,13 +79,13 @@
      var miniCartClose = document.querySelector(".mini-cart__close");
      function updateCartBadge(value) {
       var count = Number(value);
-      var badge = document.querySelector("[data-cart-count");
+      var badge = document.querySelector("[data-cart-count]");
       if (badge) {
         badge.textContent = count;
         badge.hidden = count === 0;
       }
       if (cartLink) {
-        cartLink.setAttribute("arial-label", "Cart," + count + (count === 1 ? "item" : "items"));
+        cartLink.setAttribute("aria-label", "Cart, " + count + (count === 1 ? " item" : " items"));
       }
      }
       if (cartLink && miniCart) {
@@ -135,7 +135,7 @@
       addToCartForms.forEach(function (form) {
         form.addEventListener("submit", function (e) {
           e.preventDefault();
-          var errorBox = document.querySelector("[data-mini-cert-error]");
+          var errorBox = document.querySelector("[data-mini-cart-error]");
           if (errorBox) {
             errorBox.textContent = "";
             errorBox.hidden = true;
@@ -145,6 +145,14 @@
           if (submitButton) {
             submitButton.disabled = true;
           }
+          var loading = document.querySelector("[data-mini-cart-loading]");
+          if (loading) {
+            loading.hidden = false;
+          }
+          if (miniCart && cartLink) {
+            miniCart.hidden = false;
+          }
+          cartLink.setAttribute("aria-expanded", "true");
             fetch(form.action, {
               method: "POST",
               body: formData,
@@ -222,6 +230,11 @@
                 submitButton.disabled = false;
               }
             })
+            .finally(function () {
+              if (loading) {
+                loading.hidden = true;
+              }
+            });
         });
       });
       miniCartBody.addEventListener("click", function (e) {

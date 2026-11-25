@@ -156,3 +156,17 @@ HTTP_X_REQUESTED_WITH="XMLHttpRequest"
     assert response.status_code == 400
     assert "error" in response.json()
     assert not Cart.objects.filter(active=True, items__isnull=False).exists()
+
+
+def test_cart_ajax_zero_stock(client, catalog):
+    variant = _variant(catalog, "P1")
+    variant.inventory.update(physical=0, reserved=0)
+    assert variant.available_quantity == 0
+    response = client.post(reverse("cart_add"),{
+        "variant": variant.id, "quantity": 1
+    },
+HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+    )
+    assert response.status_code == 400
+    assert "out of stock" in response.json()["error"].lower()
+    assert not Cart.objects.filter(active=True, items__isnull=False).exists()
