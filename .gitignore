@@ -10,3 +10,5 @@ staticfiles/
 htmlcov/
 .DS_Store
 media/
+
+.idea/
